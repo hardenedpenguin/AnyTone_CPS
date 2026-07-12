@@ -129,7 +129,28 @@ writes.
 ./anytone ui
 ```
 
-## Build / install
+## Install (.deb)
+
+From [Releases](https://github.com/hardenedpenguin/AnyTone_CPS/releases):
+
+```bash
+wget https://github.com/hardenedpenguin/AnyTone_CPS/releases/download/v0.1.0/anytone_0.1.0-1_amd64.deb
+sudo apt install ./anytone_0.1.0-1_amd64.deb
+```
+
+Or build the package locally:
+
+```bash
+sudo apt install build-essential debhelper fakeroot pkg-config libwebkit2gtk-4.1-dev
+make deb
+sudo apt install ../anytone_*.deb
+```
+
+Tag a release after bumping `debian/changelog` to `X.Y.Z-1`, then
+`git tag vX.Y.Z && git push origin vX.Y.Z` — CI builds the `.deb` and attaches
+it to the GitHub Release.
+
+## Build / install (from source)
 
 ```bash
 make

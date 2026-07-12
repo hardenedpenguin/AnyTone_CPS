@@ -19,7 +19,7 @@ ifneq ($(WEBKIT_CFLAGS),)
   LIBS     += $(WEBKIT_LIBS)
 endif
 
-.PHONY: all clean install uninstall schema
+.PHONY: all clean install uninstall schema deb lint
 
 all: $(BIN)
 
@@ -68,3 +68,11 @@ uninstall:
 	rm -rf $(DESTDIR)$(PREFIX)/share/anytone
 	rm -f $(DESTDIR)$(PREFIX)/share/applications/anytone.desktop
 	rm -f $(DESTDIR)$(PREFIX)/lib/udev/rules.d/99-anytone.rules
+
+deb:
+	fakeroot dpkg-buildpackage -b -us -uc
+
+lint: deb
+	lintian --fail-on error \
+		--suppress-tags bad-distribution-in-changes-file \
+		../*.changes ../anytone_*.deb

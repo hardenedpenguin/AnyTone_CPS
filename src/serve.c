@@ -424,8 +424,8 @@ static int try_schema_file(char *out, size_t out_sz, const char *webroot,
 {
     const char *roots[] = {
         "web/schema",
+        "/usr/share/anytone/web/schema",
         "/usr/local/share/anytone/web/schema",
-        "/home/repos/AnyTone/web/schema",
         NULL,
     };
     for (int i = 0; roots[i]; i++) {
@@ -498,10 +498,10 @@ static int serve_state_init(struct serve_state *st, const char *device,
         snprintf(st->webroot, sizeof(st->webroot), "%s", webroot);
     } else if (access("web/index.html", R_OK) == 0) {
         snprintf(st->webroot, sizeof(st->webroot), "web");
+    } else if (access("/usr/share/anytone/web/index.html", R_OK) == 0) {
+        snprintf(st->webroot, sizeof(st->webroot), "/usr/share/anytone/web");
     } else if (access("/usr/local/share/anytone/web/index.html", R_OK) == 0) {
         snprintf(st->webroot, sizeof(st->webroot), "/usr/local/share/anytone/web");
-    } else if (access("/home/repos/AnyTone/web/index.html", R_OK) == 0) {
-        snprintf(st->webroot, sizeof(st->webroot), "/home/repos/AnyTone/web");
     } else {
         fprintf(stderr, "cannot find web/ UI directory\n");
         serve_state_cleanup(st);

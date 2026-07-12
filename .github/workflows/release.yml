@@ -1,0 +1,97 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Push a tag matching v* (e.g. v0.1.0) after updating debian/changelog so the
+# package version is X.Y.Z-1 for tag vX.Y.Z.
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Debian build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            debhelper \
+            devscripts \
+            fakeroot \
+            lintian \
+            pkg-config \
+            libwebkit2gtk-4.1-dev
+
+      - name: Verify Debian changelog matches tag
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          EXPECTED="${VERSION}-1"
+          CURRENT=$(dpkg-parsechangelog -SVersion)
+          if [ "$CURRENT" != "$EXPECTED" ]; then
+            echo "::error::debian/changelog is ${CURRENT} but tag ${TAG} requires ${EXPECTED}. Update debian/changelog before tagging."
+            exit 1
+          fi
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+          echo "DEB_VERSION=${EXPECTED}" >> "$GITHUB_ENV"
+
+      - name: Build and lint package
+        run: make lint
+
+      - name: Stage release artifacts
+        run: |
+          mkdir -p dist
+          cp ../anytone_"${DEB_VERSION}"_*.deb dist/
+          cp ../anytone_"${DEB_VERSION}"_*.changes dist/ || true
+          (cd dist && sha256sum ./*.deb > SHA256SUMS)
+          ls -la dist/
+
+      - name: Update README.md download URLs for this release
+        run: |
+          sed -i "s|https://github.com/hardenedpenguin/AnyTone_CPS/releases/download/v[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*/anytone_[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*-1_amd64\.deb|https://github.com/hardenedpenguin/AnyTone_CPS/releases/download/${GITHUB_REF_NAME}/anytone_${DEB_VERSION}_amd64.deb|g" README.md
+          sed -i "s|anytone_[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*-1_amd64\.deb|anytone_${DEB_VERSION}_amd64.deb|g" README.md
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          draft: false
+          generate_release_notes: true
+          files: |
+            dist/*.deb
+            dist/SHA256SUMS
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sync README.md on main branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          cp README.md /tmp/README.md.release
+          git fetch origin main
+          git checkout -B main origin/main
+          cp /tmp/README.md.release README.md
+          if git diff --quiet README.md; then
+            echo "README.md already matches ${GITHUB_REF_NAME}; nothing to push."
+          else
+            git add README.md
+            git commit -m "docs: sync README download URLs for ${GITHUB_REF_NAME}"
+            git push origin main
+          fi
+
+  publish-apt-repo:
+    needs: publish
+    uses: hardenedpenguin/hardenedpenguin-apt/.github/workflows/dispatch-apt-publish.yml@main
+    secrets:
+      APT_REPO_DISPATCH_TOKEN: ${{ secrets.APT_REPO_DISPATCH_TOKEN }}

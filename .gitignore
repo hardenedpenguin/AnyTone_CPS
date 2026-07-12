@@ -6,3 +6,11 @@ anytone
 compile_commands.json
 __pycache__/
 *.pyc
+debian/anytone/
+debian/.debhelper/
+debian/files
+debian/*.substvars
+debian/*.debhelper.log
+debian/debhelper-build-stamp
+build/
+dist/

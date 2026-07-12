@@ -1,0 +1,23 @@
+Source: anytone
+Section: hamradio
+Priority: optional
+Maintainer: Jory A. Pratt (W5GLE) <geekypenguin@gmail.com>
+Build-Depends: debhelper-compat (= 13),
+               pkg-config,
+               libwebkit2gtk-4.1-dev
+Standards-Version: 4.7.0
+Homepage: https://github.com/hardenedpenguin/AnyTone_CPS
+Vcs-Browser: https://github.com/hardenedpenguin/AnyTone_CPS
+Vcs-Git: https://github.com/hardenedpenguin/AnyTone_CPS.git
+Rules-Requires-Root: no
+
+Package: anytone
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Linux CPS for Anytone D878UV / D878UV II / D578UV
+ Read and write Anytone DMR codeplugs over USB, with a local Codeplug Studio
+ UI (desktop WebKitGTK or browser) for editing channels, zones, APRS, GPS,
+ and related settings without Windows CPS.
+ .
+ Supports AT-D878UV, AT-D878UV II, and AT-D578UV using reverse-engineered
+ memory maps. Includes udev rules for the programming cable.

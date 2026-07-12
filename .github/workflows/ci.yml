@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Debian build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            debhelper \
+            devscripts \
+            fakeroot \
+            lintian \
+            pkg-config \
+            libwebkit2gtk-4.1-dev
+
+      - name: Build and lint package
+        run: make lint
+
+      - name: Collect .deb for artifact
+        run: |
+          mkdir -p build
+          cp ../*.deb build/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: anytone-deb
+          path: build/*.deb
