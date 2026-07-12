@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>Anytone CPS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="nav">
+      <div class="brand">
+        <div class="brand-mark">AT</div>
+        <div>
+          <div class="brand-name">Anytone</div>
+          <div class="brand-sub">Codeplug Studio</div>
+        </div>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-label">Radio</div>
+        <button class="nav-item active" data-view="dashboard">Overview</button>
+        <button class="nav-item" data-view="radio-ids">Radio IDs</button>
+        <button class="nav-item" data-view="settings">Boot &amp; Display</button>
+        <button class="nav-item" data-view="gps">GPS</button>
+        <button class="nav-item" data-view="optional">Optional Settings</button>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-label">Digital</div>
+        <button class="nav-item" data-view="contacts">Talk Groups / Contacts</button>
+        <button class="nav-item" data-view="rx-groups">RX Group Lists</button>
+        <button class="nav-item" data-view="aprs">APRS</button>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-label">Memory</div>
+        <button class="nav-item" data-view="channels">Channels</button>
+        <button class="nav-item" data-view="zones">Zones</button>
+        <button class="nav-item" data-view="scan-lists">Scan Lists</button>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-label">Features</div>
+        <button class="nav-item" data-view="roaming">Roaming</button>
+        <button class="nav-item" data-view="hotkeys">Buttons &amp; Hotkeys</button>
+        <button class="nav-item" data-view="signaling">Signaling (DTMF/2T/5T)</button>
+        <button class="nav-item" data-view="encryption">Encryption</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="status" id="status">No codeplug loaded</div>
+        <div class="actions">
+          <button class="btn" id="btn-read">Read from radio</button>
+          <button class="btn" id="btn-write">Write to radio</button>
+          <label class="btn ghost">
+            Open .atcp
+            <input type="file" id="file-atcp" accept=".atcp,application/octet-stream" hidden />
+          </label>
+          <button class="btn ghost" id="btn-save-atcp">Save .atcp</button>
+        </div>
+      </header>
+
+      <section class="content" id="content"></section>
+    </main>
+  </div>
+  <script src="/app.js"></script>
+</body>
+</html>

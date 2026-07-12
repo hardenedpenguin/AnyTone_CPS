@@ -1,0 +1,5 @@
+# Anytone D878UV / D878UV II / D578UV programming cable (USB CDC ACM)
+# GD32-based handhelds
+SUBSYSTEM=="tty", ATTRS{idVendor}=="28e9", ATTRS{idProduct}=="018a", MODE="0660", GROUP="dialout", TAG+="uaccess"
+# STM32-based mobiles (some D578 revisions)
+SUBSYSTEM=="tty", ATTRS{idVendor}=="2e3c", ATTRS{idProduct}=="5740", MODE="0660", GROUP="dialout", TAG+="uaccess"

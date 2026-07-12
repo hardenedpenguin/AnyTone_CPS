@@ -1,0 +1,8 @@
+*.o
+anytone
+*.atcp
+*.bin
+.clangd
+compile_commands.json
+__pycache__/
+*.pyc

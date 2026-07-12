@@ -1,0 +1,11 @@
+#ifndef ANYTONE_H
+#define ANYTONE_H
+
+#include "serial.h"
+#include "protocol.h"
+#include "image.h"
+#include "codeplug.h"
+
+#define ANYTONE_VERSION "0.3.0"
+
+#endif /* ANYTONE_H */
