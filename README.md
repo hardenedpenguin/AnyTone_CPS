@@ -1,5 +1,11 @@
 # anytone — Linux programmer for Anytone D878UV / D878UV II / D578UV
 
+[![CI](https://github.com/hardenedpenguin/AnyTone_CPS/actions/workflows/ci.yml/badge.svg)](https://github.com/hardenedpenguin/AnyTone_CPS/actions/workflows/ci.yml)
+![GitHub total downloads](https://img.shields.io/github/downloads/hardenedpenguin/AnyTone_CPS/total?style=flat-square)
+![Release](https://img.shields.io/github/v/release/hardenedpenguin/AnyTone_CPS?style=flat-square)
+[![APT repository](https://img.shields.io/badge/apt-hardenedpenguin.github.io-blue?logo=github)](https://hardenedpenguin.github.io/hardenedpenguin-apt/)
+![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)
+
 C toolchain plus a local **Codeplug Studio** UI for programming Anytone DMR
 radios without Windows CPS.
 
