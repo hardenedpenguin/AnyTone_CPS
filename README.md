@@ -9,6 +9,14 @@
 C toolchain plus a local **Codeplug Studio** UI for programming Anytone DMR
 radios without Windows CPS.
 
+<p align="center">
+  <a href="docs/screenshots/overview.png"><img src="docs/screenshots/overview.png" width="260" alt="Overview" /></a>
+  <a href="docs/screenshots/channels.png"><img src="docs/screenshots/channels.png" width="260" alt="Channels" /></a>
+  <a href="docs/screenshots/zones.png"><img src="docs/screenshots/zones.png" width="260" alt="Zones" /></a>
+</p>
+
+<p align="center"><em>Overview · Channels · Zones — click a thumbnail for full size</em></p>
+
 ## Quick start (UI)
 
 ```bash
