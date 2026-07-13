@@ -3,6 +3,7 @@ Type=Application
 Name=Anytone Codeplug Studio
 Comment=Program Anytone D878UV / D578UV radios
 Exec=anytone ui
+Icon=anytone
 Terminal=false
 Categories=HamRadio;Utility;
 Keywords=anytone;dmr;aprs;codeplug;cps;

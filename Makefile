@@ -60,6 +60,11 @@ install: $(BIN)
 	cp -a web/. $(DESTDIR)$(PREFIX)/share/anytone/web/
 	install -d $(DESTDIR)$(PREFIX)/share/applications
 	install -m 644 packaging/anytone.desktop $(DESTDIR)$(PREFIX)/share/applications/anytone.desktop
+	for size in 48 128 256 512; do \
+		install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/$${size}x$${size}/apps; \
+		install -m 644 packaging/icons/hicolor/$${size}x$${size}/apps/anytone.png \
+			$(DESTDIR)$(PREFIX)/share/icons/hicolor/$${size}x$${size}/apps/anytone.png; \
+	done
 	install -d $(DESTDIR)$(PREFIX)/lib/udev/rules.d
 	install -m 644 udev/99-anytone.rules $(DESTDIR)$(PREFIX)/lib/udev/rules.d/99-anytone.rules
 
@@ -67,6 +72,9 @@ uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/$(BIN)
 	rm -rf $(DESTDIR)$(PREFIX)/share/anytone
 	rm -f $(DESTDIR)$(PREFIX)/share/applications/anytone.desktop
+	for size in 48 128 256 512; do \
+		rm -f $(DESTDIR)$(PREFIX)/share/icons/hicolor/$${size}x$${size}/apps/anytone.png; \
+	done
 	rm -f $(DESTDIR)$(PREFIX)/lib/udev/rules.d/99-anytone.rules
 
 deb:

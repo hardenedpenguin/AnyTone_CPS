@@ -140,8 +140,8 @@ writes.
 From [Releases](https://github.com/hardenedpenguin/AnyTone_CPS/releases):
 
 ```bash
-wget https://github.com/hardenedpenguin/AnyTone_CPS/releases/download/v0.1.0/anytone_0.1.0-1_amd64.deb
-sudo apt install ./anytone_0.1.0-1_amd64.deb
+wget https://github.com/hardenedpenguin/AnyTone_CPS/releases/download/v0.1.1/anytone_0.1.1-1_amd64.deb
+sudo apt install ./anytone_0.1.1-1_amd64.deb
 ```
 
 Or build the package locally:

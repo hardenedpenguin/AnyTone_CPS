@@ -6,6 +6,6 @@
 #include "image.h"
 #include "codeplug.h"
 
-#define ANYTONE_VERSION "0.3.0"
+#define ANYTONE_VERSION "0.1.1"
 
 #endif /* ANYTONE_H */
