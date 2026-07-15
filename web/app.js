@@ -85,6 +85,132 @@ function nextIndex(list) {
   return Math.max(...list.map((x) => x.index)) + 1;
 }
 
+/** Remap channel slot numbers inside zones / scan lists. */
+function applyChannelIndexRemap(oldToNew) {
+  if (!oldToNew.size) return;
+  const map = (v) => (oldToNew.has(v) ? oldToNew.get(v) : v);
+  for (const z of state.codeplug.zones || []) {
+    z.channels = (z.channels || []).map(map);
+  }
+  for (const s of state.codeplug.scan_lists || []) {
+    s.members = (s.members || []).map(map);
+  }
+}
+
+/** Bump every channel slot >= minIndex by +1 (and refs). */
+function bumpChannelSlotsFrom(minIndex) {
+  const oldToNew = new Map();
+  for (const ch of state.codeplug.channels) {
+    if (ch.index >= minIndex) oldToNew.set(ch.index, ch.index + 1);
+  }
+  for (const ch of state.codeplug.channels) {
+    const neu = oldToNew.get(ch.index);
+    if (neu !== undefined) ch.index = neu;
+  }
+  applyChannelIndexRemap(oldToNew);
+}
+
+/** Swap two channel array rows and their radio slots; keep zone/scan refs valid. */
+function moveChannel(arrIdx, delta) {
+  const list = state.codeplug.channels;
+  const j = arrIdx + delta;
+  if (arrIdx < 0 || j < 0 || j >= list.length) return false;
+  const a = list[arrIdx];
+  const b = list[j];
+  const ia = a.index;
+  const ib = b.index;
+  list[arrIdx] = b;
+  list[j] = a;
+  a.index = ib;
+  b.index = ia;
+  const swap = (v) => (v === ia ? ib : v === ib ? ia : v);
+  for (const z of state.codeplug.zones || []) {
+    z.channels = (z.channels || []).map(swap);
+  }
+  for (const s of state.codeplug.scan_lists || []) {
+    s.members = (s.members || []).map(swap);
+  }
+  state.selected.channels = j;
+  return true;
+}
+
+function newBlankChannel(index) {
+  return {
+    index,
+    name: "New CH",
+    rx_mhz: 146.520,
+    tx_mhz: 146.520,
+    mode: 0,
+    power: 2,
+    bandwidth_wide: false,
+    color_code: 1,
+    timeslot: 1,
+    contact_index: -1,
+    radio_id_index: -1,
+    scan_list_index: -1,
+    rx_group_index: -1,
+    rx_only: false,
+    admit: 0,
+    rx_ctcss: 0,
+    tx_ctcss: 0,
+    rx_dcs: 0,
+    tx_dcs: 0,
+  };
+}
+
+/** Insert a new channel after the selected row (or at end). */
+function insertChannelAfterSelected() {
+  const list = state.codeplug.channels;
+  const sel = state.selected.channels;
+  if (sel < 0 || sel >= list.length) {
+    const index = nextIndex(list);
+    list.push(newBlankChannel(index));
+    state.selected.channels = list.length - 1;
+    return;
+  }
+  const newIndex = list[sel].index + 1;
+  bumpChannelSlotsFrom(newIndex);
+  list.splice(sel + 1, 0, newBlankChannel(newIndex));
+  state.selected.channels = sel + 1;
+}
+
+function bumpZoneSlotsFrom(minIndex) {
+  for (const z of state.codeplug.zones) {
+    if (z.index >= minIndex) z.index += 1;
+  }
+}
+
+function moveZone(arrIdx, delta) {
+  const list = state.codeplug.zones;
+  const j = arrIdx + delta;
+  if (arrIdx < 0 || j < 0 || j >= list.length) return false;
+  const a = list[arrIdx];
+  const b = list[j];
+  const ia = a.index;
+  const ib = b.index;
+  list[arrIdx] = b;
+  list[j] = a;
+  a.index = ib;
+  b.index = ia;
+  state.selected.zones = j;
+  return true;
+}
+
+function insertZoneAfterSelected() {
+  const list = state.codeplug.zones;
+  const sel = state.selected.zones;
+  if (sel < 0 || sel >= list.length) {
+    const index = nextIndex(list);
+    list.push({ index, name: "Zone", channels: [] });
+    state.selected.zones = list.length - 1;
+    return;
+  }
+  const newIndex = list[sel].index + 1;
+  bumpZoneSlotsFrom(newIndex);
+  list.splice(sel + 1, 0, { index: newIndex, name: "Zone", channels: [] });
+  state.selected.zones = sel + 1;
+}
+
 function mhz(n) {
   return Number(n).toFixed(5).replace(/0+$/, "").replace(/\.$/, ".0");
 }
@@ -1230,9 +1356,13 @@ function viewChannels() {
     <div class="panel-head">
       <div>
         <h1>Channels</h1>
-        <p>Analog and DMR memories. Assign a contact, radio ID, scan list, and RX group on digital channels.</p>
+        <p>Analog and DMR memories. Assign a contact, radio ID, scan list, and RX group on digital channels.
+           Use Insert / Move to place a channel with a group instead of only appending at the end.</p>
       </div>
-      <button class="btn primary" id="add-channel">Add channel</button>
+      <div class="actions">
+        <button class="btn" id="insert-channel" ${state.selected.channels < 0 ? "disabled" : ""}>Insert after selected</button>
+        <button class="btn primary" id="add-channel">Add at end</button>
+      </div>
     </div>
     <div class="editor">
       <div class="table-wrap"><table>
@@ -1276,6 +1406,9 @@ function rxGroupOptions(selected) {
 }
 
 function channelForm(ch) {
+  const i = state.selected.channels;
+  const atTop = i <= 0;
+  const atBottom = i < 0 || i >= state.codeplug.channels.length - 1;
   return `<form class="form" id="channel-form">
     <h2>Edit channel</h2>
     <div class="form-grid">
@@ -1314,6 +1447,8 @@ function channelForm(ch) {
       </label>
     </div>
     <div class="form-actions">
+      <button class="btn" type="button" id="move-channel-up" ${atTop ? "disabled" : ""}>↑ Move up</button>
+      <button class="btn" type="button" id="move-channel-down" ${atBottom ? "disabled" : ""}>↓ Move down</button>
       <button class="btn primary" type="submit">Apply</button>
       <button class="btn danger" type="button" id="del-channel">Delete</button>
     </div>
@@ -1332,9 +1467,13 @@ function viewZones() {
     <div class="panel-head">
       <div>
         <h1>Zones</h1>
-        <p>Zones group channels for the channel knob / menu. A channel is only usable on the radio if it belongs to a zone.</p>
+        <p>Zones group channels for the channel knob / menu. A channel is only usable on the radio if it belongs to a zone.
+           Use Insert / Move to reorder the zone list.</p>
       </div>
-      <button class="btn primary" id="add-zone">Add zone</button>
+      <div class="actions">
+        <button class="btn" id="insert-zone" ${state.selected.zones < 0 ? "disabled" : ""}>Insert after selected</button>
+        <button class="btn primary" id="add-zone">Add at end</button>
+      </div>
     </div>
     <div class="editor">
       <div class="table-wrap"><table>
@@ -1346,6 +1485,9 @@ function viewZones() {
 }
 
 function zoneForm(z) {
+  const i = state.selected.zones;
+  const atTop = i <= 0;
+  const atBottom = i < 0 || i >= state.codeplug.zones.length - 1;
   const memberSet = new Set(z.channels);
   const available = state.codeplug.channels
     .filter((ch) => !memberSet.has(ch.index))
@@ -1365,6 +1507,8 @@ function zoneForm(z) {
       <label>Zone members<select id="zone-members" name="channels" multiple size="10">${members}</select></label>
     </div>
     <div class="form-actions">
+      <button class="btn" type="button" id="move-zone-up" ${atTop ? "disabled" : ""}>↑ Move up</button>
+      <button class="btn" type="button" id="move-zone-down" ${atBottom ? "disabled" : ""}>↓ Move down</button>
       <button class="btn" type="button" id="zone-add">Add →</button>
       <button class="btn" type="button" id="zone-remove">← Remove</button>
       <button class="btn primary" type="submit">Apply</button>
@@ -1883,13 +2027,13 @@ function bindViewHandlers() {
   const addCh = document.getElementById("add-channel");
   if (addCh) addCh.onclick = () => {
     const index = nextIndex(state.codeplug.channels);
-    state.codeplug.channels.push({
-      index, name: "New CH", rx_mhz: 146.520, tx_mhz: 146.520,
-      mode: 0, power: 2, bandwidth_wide: false, color_code: 1, timeslot: 1,
-      contact_index: -1, radio_id_index: -1, scan_list_index: -1, rx_group_index: -1,
-      rx_only: false, admit: 0, rx_ctcss: 0, tx_ctcss: 0, rx_dcs: 0, tx_dcs: 0,
-    });
+    state.codeplug.channels.push(newBlankChannel(index));
     state.selected.channels = state.codeplug.channels.length - 1;
+    markDirty(); render();
+  };
+  const insertCh = document.getElementById("insert-channel");
+  if (insertCh) insertCh.onclick = () => {
+    insertChannelAfterSelected();
     markDirty(); render();
   };
   const chForm = document.getElementById("channel-form");
@@ -1915,12 +2059,19 @@ function bindViewHandlers() {
       state.codeplug.channels.splice(state.selected.channels, 1);
       state.selected.channels = -1; markDirty(); render();
     };
+    const up = document.getElementById("move-channel-up");
+    if (up) up.onclick = () => {
+      if (moveChannel(state.selected.channels, -1)) { markDirty(); render(); }
+    };
+    const down = document.getElementById("move-channel-down");
+    if (down) down.onclick = () => {
+      if (moveChannel(state.selected.channels, 1)) { markDirty(); render(); }
+    };
   }
 
   wireMoveList("zone-available", "zone-members", "zone-add", "zone-remove");
   const zForm = document.getElementById("zone-form");
   if (zForm) {
-    document.getElementById("add-zone")?.addEventListener?.("click", () => {});
     zForm.onsubmit = (e) => {
       e.preventDefault();
       const o = formData(zForm);
@@ -1934,12 +2085,25 @@ function bindViewHandlers() {
       state.codeplug.zones.splice(state.selected.zones, 1);
       state.selected.zones = -1; markDirty(); render();
     };
+    const upZ = document.getElementById("move-zone-up");
+    if (upZ) upZ.onclick = () => {
+      if (moveZone(state.selected.zones, -1)) { markDirty(); render(); }
+    };
+    const downZ = document.getElementById("move-zone-down");
+    if (downZ) downZ.onclick = () => {
+      if (moveZone(state.selected.zones, 1)) { markDirty(); render(); }
+    };
   }
   const addZ = document.getElementById("add-zone");
   if (addZ) addZ.onclick = () => {
     const index = nextIndex(state.codeplug.zones);
     state.codeplug.zones.push({ index, name: "Zone", channels: [] });
     state.selected.zones = state.codeplug.zones.length - 1;
+    markDirty(); render();
+  };
+  const insertZ = document.getElementById("insert-zone");
+  if (insertZ) insertZ.onclick = () => {
+    insertZoneAfterSelected();
     markDirty(); render();
   };
 
