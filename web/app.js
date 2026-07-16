@@ -24,7 +24,55 @@ let state = {
     "enc-dmr": 0, "enc-arc4": 0,
   },
   dirty: false,
+  fileName: "codeplug.atcp", /* last opened / suggested save name */
 };
+
+function normalizeAtcpName(name) {
+  let n = String(name || "").trim().replace(/[/\\]/g, "");
+  if (!n) n = "codeplug.atcp";
+  if (!/\.atcp$/i.test(n)) n += ".atcp";
+  return n;
+}
+
+/** Ask the user for a save path/name; returns {handle,name} or null if cancelled. */
+async function pickSaveName(defaultName) {
+  const suggested = normalizeAtcpName(defaultName || state.fileName);
+  if (typeof window.showSaveFilePicker === "function") {
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: suggested,
+        types: [
+          {
+            description: "Anytone codeplug",
+            accept: { "application/octet-stream": [".atcp"] },
+          },
+        ],
+      });
+      return { handle, name: normalizeAtcpName(handle.name) };
+    } catch (e) {
+      if (e && e.name === "AbortError") return null;
+      /* fall through to prompt */
+    }
+  }
+  const entered = prompt("Save .atcp as:", suggested);
+  if (entered == null) return null;
+  return { handle: null, name: normalizeAtcpName(entered) };
+}
+
+async function saveBlobAs(blob, pick) {
+  if (pick.handle) {
+    const writable = await pick.handle.createWritable();
+    await writable.write(blob);
+    await writable.close();
+    return pick.name;
+  }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = pick.name;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  return pick.name;
+}
 
 function emptyCodeplug() {
   return {
@@ -2198,6 +2246,7 @@ document.getElementById("btn-read").onclick = async () => {
     if (!state.codeplug.rx_groups) state.codeplug.rx_groups = [];
     state.imageLoaded = true;
     state.dirty = false;
+    state.fileName = normalizeAtcpName(`${state.codeplug.model || "codeplug"}.atcp`);
     render();
     const sec = Math.floor((Date.now() - started) / 1000);
     setStatus(`Read OK in ${sec}s — ${state.codeplug.model} · ${(state.codeplug.rx_groups || []).length} RX groups · map ${state.codeplug.schema_firmware || "?"}`);
@@ -2247,6 +2296,7 @@ document.getElementById("file-atcp").onchange = async (e) => {
     if (!state.codeplug.optional_settings) state.codeplug.optional_settings = {};
     state.imageLoaded = true;
     state.dirty = false;
+    state.fileName = normalizeAtcpName(file.name);
     state.selected = {
       "radio-ids": 0, contacts: 0, channels: 0, zones: 0,
       "scan-lists": 0, "rx-groups": 0,
@@ -2268,17 +2318,21 @@ document.getElementById("file-atcp").onchange = async (e) => {
 };
 
 document.getElementById("btn-save-atcp").onclick = async () => {
+  const pick = await pickSaveName(state.fileName);
+  if (!pick) {
+    setStatus("Save cancelled");
+    return;
+  }
   try {
     await api("PUT", "/api/codeplug", state.codeplug);
     const res = await fetch("/api/export");
     if (!res.ok) throw new Error("export failed");
     const blob = await res.blob();
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `${state.codeplug.model || "codeplug"}.atcp`;
-    a.click();
+    const name = await saveBlobAs(blob, pick);
+    state.fileName = name;
     state.dirty = false;
     updateStatusLine();
+    setStatus(`Saved ${name}`);
   } catch (e) {
     setStatus(`Save failed: ${e.message}`);
   }
